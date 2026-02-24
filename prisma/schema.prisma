@@ -1350,7 +1350,7 @@ model IdentitySnapshot {
   /// Structured identity data
   capabilities     Json @default("[]") // Array of { name, confidence, lastSeen }
   preferences      Json @default("{}") // Key-value preference summary
-  trustScores      Json @default("{}") // { source: score } trends
+  trustScores      Json @default("{}") @map("trust_scores") // { source: score } trends
   behavioralTraits Json @default("[]") @map("behavioral_traits") // Array of { trait, strength, evidence }
 
   /// Source tracking
