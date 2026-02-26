@@ -88,8 +88,11 @@ describe('WebhookDeliveryService', () => {
 
       await service.handleEvent(evt);
 
-      // Wait for fire-and-forget
-      await new Promise((r) => setTimeout(r, 100));
+      // Wait for fire-and-forget delivery (may need multiple ticks)
+      for (let i = 0; i < 20; i++) {
+        if (mockFetch.mock.calls.length > 0) break;
+        await new Promise((r) => setTimeout(r, 50));
+      }
       expect(mockFetch).toHaveBeenCalled();
     });
   });
