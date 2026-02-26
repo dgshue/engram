@@ -220,7 +220,7 @@ export class MemoryPipelineService {
         where: { id: memoryId },
         data: { metadata: metadataUpdate },
       });
-      console.log('[Memory] Capability/preference signals stored:', {
+      this.logger.log('[Memory] Capability/preference signals stored:', {
         memoryId,
         capabilities: extracted.capabilities.length,
         preferences: extracted.preferenceSignals.length,
