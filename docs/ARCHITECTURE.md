@@ -25,13 +25,17 @@
 |---|---|
 | `ensemble` | Multi-model RRF fusion, drift detection, nightly re-embed, model registry |
 | `correction` | Contradiction detection, memory superseding chains |
-| `consolidation` | Merge duplicate/related memories |
-| `deduplication` | Exact/near-duplicate detection |
+| `consolidation` | Merge duplicate/related memories (Dream Cycle) |
+| `deduplication` | Exact/near-duplicate detection, similarity scoring, safety checks |
 | `clustering` | Memory clustering |
-| `hierarchy` | Hierarchical memory organization |
+| `hierarchy` | Hierarchical memory organization, segmentation, query routing |
 | `summarization` | Memory summarization |
 | `fog-index` | Memory fog/decay scoring |
-| `reembedding` | Re-embed memories with updated models |
+| `reembedding` | Re-embed memories with updated models, context enrichment |
+| `anticipatory` | Anticipatory recall — context signals predict what memories will be needed |
+| `awareness` | Waking cycle — periodic autonomous awareness tasks |
+| `identity` | Agent identity — task completion, delegation templates, trust profiles, contracts |
+| `challenge` | Challenge/verification of memory accuracy |
 
 ### Access & Context
 | Module | Purpose |
@@ -47,7 +51,7 @@
 | Module | Purpose |
 |---|---|
 | `account` | Account management, JWT auth, admin endpoints |
-| `agent` | Agent profiles and config |
+| `agent` | Agent profiles, config, reflection |
 | `agent-session` | Session management |
 | `session` | Session utilities |
 | `user` | User management |
@@ -57,6 +61,14 @@
 | `utils` | Utility functions |
 | `stripe` | Stripe billing, subscriptions, webhook handling |
 | `scripts` | CLI/maintenance scripts |
+| `cloud-link` | Cloud link management — connect self-hosted to OpenEngram Cloud |
+| `cloud-sync` | Cloud sync — backup and cross-device memory synchronization |
+| `delegation` | Task delegation — task and template controllers |
+| `instance` | Instance management — self-hosted instance registration |
+| `teams` | Team management — multi-user team access |
+| `inbound-email` | Inbound email processing |
+| `session-indexing` | Session indexing for search |
+| `queue` | Background job queue |
 
 ### Ops
 | Module | Purpose |
