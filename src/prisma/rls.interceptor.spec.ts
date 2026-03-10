@@ -252,4 +252,108 @@ describe('RlsInterceptor', () => {
       error: done,
     });
   });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // RLS role enforcement tests (SET LOCAL ROLE app)
+  // ──────────────────────────────────────────────────────────────────────────
+
+  it('should call SET LOCAL ROLE app when accountId is present', (done) => {
+    const mockTx = {
+      $executeRawUnsafe: jest.fn().mockResolvedValue(undefined),
+    };
+
+    prisma.$transaction = jest.fn().mockImplementation(async (fn) => {
+      return fn(mockTx);
+    });
+
+    const ctx = createMockContext({
+      accountId: 'acc-rls-test',
+      url: '/v1/memories',
+    });
+    const handler = createMockCallHandler('rls-result');
+
+    interceptor.intercept(ctx, handler).subscribe({
+      next: () => {
+        expect(mockTx.$executeRawUnsafe).toHaveBeenCalledWith(
+          "SET LOCAL app.current_account_id = 'acc-rls-test'",
+        );
+        expect(mockTx.$executeRawUnsafe).toHaveBeenCalledWith('SET LOCAL ROLE app');
+        // Ensure account_id is set BEFORE role switch
+        const calls = mockTx.$executeRawUnsafe.mock.calls.map((c: string[]) => c[0]);
+        const accountIdIdx = calls.findIndex((c: string) =>
+          c.includes('current_account_id'),
+        );
+        const roleIdx = calls.findIndex((c: string) => c === 'SET LOCAL ROLE app');
+        expect(accountIdIdx).toBeLessThan(roleIdx);
+        done();
+      },
+      error: done,
+    });
+  });
+
+  it('should NOT call SET LOCAL ROLE app when accountId is null', (done) => {
+    // No accountId → intercept returns next.handle() directly, no transaction
+    const ctx = createMockContext({ url: '/v1/memories' });
+    const handler = createMockCallHandler('passthrough');
+
+    interceptor.intercept(ctx, handler).subscribe({
+      next: (val) => {
+        expect(val).toBe('passthrough');
+        expect(prisma.$transaction).not.toHaveBeenCalled();
+        done();
+      },
+      error: done,
+    });
+  });
+
+  it('should NOT call SET LOCAL ROLE app for /consolidation/ skip path', (done) => {
+    const ctx = createMockContext({
+      accountId: 'acc-admin',
+      url: '/v1/consolidation/trigger',
+    });
+    const handler = createMockCallHandler('skip-result');
+
+    interceptor.intercept(ctx, handler).subscribe({
+      next: (val) => {
+        expect(val).toBe('skip-result');
+        expect(prisma.$transaction).not.toHaveBeenCalled();
+        done();
+      },
+      error: done,
+    });
+  });
+
+  it('should NOT call SET LOCAL ROLE app for /consolidate skip path', (done) => {
+    const ctx = createMockContext({
+      accountId: 'acc-admin',
+      url: '/v1/consolidate',
+    });
+    const handler = createMockCallHandler('skip-consolidate');
+
+    interceptor.intercept(ctx, handler).subscribe({
+      next: (val) => {
+        expect(val).toBe('skip-consolidate');
+        expect(prisma.$transaction).not.toHaveBeenCalled();
+        done();
+      },
+      error: done,
+    });
+  });
+
+  it('should NOT call SET LOCAL ROLE app for /dedup/batch skip path', (done) => {
+    const ctx = createMockContext({
+      accountId: 'acc-admin',
+      url: '/v1/dedup/batch',
+    });
+    const handler = createMockCallHandler('skip-dedup-batch');
+
+    interceptor.intercept(ctx, handler).subscribe({
+      next: (val) => {
+        expect(val).toBe('skip-dedup-batch');
+        expect(prisma.$transaction).not.toHaveBeenCalled();
+        done();
+      },
+      error: done,
+    });
+  });
 });
