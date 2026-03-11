@@ -42,6 +42,7 @@ jobs:
       DURABILITY_BOOST_ENABLED: 'true'
       DURABLE_BOOST_MULTIPLIER: '1.3'
       EPHEMERAL_PENALTY_MULTIPLIER: '0.85'
+      ENSEMBLE_ENABLED: 'true'
 
     steps:
       - uses: actions/checkout@v4
