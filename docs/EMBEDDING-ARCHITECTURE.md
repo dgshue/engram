@@ -4,6 +4,8 @@
 
 Engram uses **multi-model ensemble embedding** for semantic search. The embedding backend differs between self-hosted and cloud (SaaS) deployments.
 
+Search quality is further improved by an optional **cross-encoder reranking pipeline** that runs after initial vector retrieval.
+
 ## Self-Hosted: Local Ensemble (engram-embed)
 
 - **Service:** [engram-embed](https://github.com/heybeaux/engram-embed) (Rust, Axum, Candle)
@@ -30,6 +32,7 @@ Engram uses **multi-model ensemble embedding** for semantic search. The embeddin
   - `COHERE_API_KEY` (optional — enables Cohere model)
 - **Cost:** Per-token pricing from OpenAI/Cohere
 - **Latency:** ~200-500ms per embedding (all models in parallel)
+- **Note:** Cohere requests are chunked at **96 texts maximum** per API call to stay within provider limits.
 
 ## Why Different Models Per Environment?
 
@@ -82,19 +85,65 @@ Both backends produce multiple embeddings per memory. At query time, Engram's en
 
 1. Generates query embeddings with all available models
 2. Runs parallel pgvector similarity searches per model
-3. Fuses results using Reciprocal Rank Fusion (RRF)
-4. Returns a single ranked result set
+   - Per-model queries are **isolated** to prevent RLS transaction abort propagation (25P02)
+3. Fuses results using **Reciprocal Rank Fusion (RRF)**
+4. Optionally re-ranks via cross-encoder (see below)
+5. Returns a single ranked result set
 
 This multi-model approach improves recall by ~15-20% over single-model search, as different models capture different semantic aspects of the text.
+
+## Cross-Encoder Reranking Pipeline
+
+After RRF fusion, results can be re-ranked by a cross-encoder model for higher precision.
+
+- **Service:** Text Embeddings Inference (TEI) rerank API
+- **Config:** `RERANK_ENABLED=true`, `RERANK_URL=http://localhost:8081`
+- **Multi-model ensemble:** Set `RERANK_URLS=url1,url2,...` to run multiple rerankers; results are combined via RRF with configurable weights (`RERANK_MODEL_WEIGHTS`)
+- **Fallback:** If the reranker is unavailable, the pipeline gracefully falls back to the RRF-fused order (no error surfaced to the caller)
+- **Timeout:** 10 seconds (generous allowance for CPU-based rerankers on shared infrastructure)
+
+### Reranker Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `RERANK_ENABLED` | `false` | Enable cross-encoder reranking |
+| `RERANK_URL` | `http://localhost:8081` | Single TEI rerank endpoint |
+| `RERANK_URLS` | _(empty)_ | Comma-separated list for multi-model ensemble (overrides `RERANK_URL`) |
+| `RERANK_MODEL_WEIGHTS` | _(equal weights)_ | Comma-separated floats matching `RERANK_URLS` count |
+
+## Hybrid Search (BM25 + Vector)
+
+As of the P@5 recall improvements (PR #138), the retrieval pipeline supports **BM25 hybrid scoring**:
+
+- BM25 lexical scores are computed alongside vector similarity
+- Combined with vector scores before RRF fusion
+- Particularly improves recall on exact-match queries and rare terms
+
+Configure via `HYBRID_SEARCH_ENABLED=true` (defaults to `false`).
+
+## P@5 Recall Improvements (2026-03)
+
+Several improvements shipped together (PR #138):
+
+| Change | Impact |
+|--------|--------|
+| Cross-encoder reranking pipeline | Higher precision on top-5 results |
+| BM25 hybrid search | Better recall on lexical queries |
+| Sentiment polarity scoring | Distinguishes positive/negative memories |
+| Importance score fix | Corrects weighting of high-importance memories |
+
+Measured improvement: ~12% P@5 on the internal recall eval suite.
 
 ## Key Files
 
 - `src/embedding/cloud-ensemble.service.ts` — Cloud provider orchestration
+- `src/embedding/rerank.service.ts` — Cross-encoder reranking (single + ensemble)
 - `src/embedding/openai-embed.provider.ts` — OpenAI embedding provider
 - `src/embedding/providers/` — Provider implementations
 - `src/embedding/embedding-provider.interface.ts` — Common interface
 - `src/ensemble/` — Ensemble search, RRF fusion, drift detection
+- `src/vector/providers/pgvector.provider.ts` — pgvector backend (BM25 hybrid)
 
 ---
 
-*This is a critical architectural document. Update it when embedding providers or models change.*
+*Last updated: 2026-03-12. Update this doc when embedding providers, models, or the reranking pipeline change.*
