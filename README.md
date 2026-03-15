@@ -123,8 +123,16 @@ Engram is built on NestJS with PostgreSQL + pgvector for storage. The system inc
 - **Dream Cycle** — 4-stage consolidation: dedup → staleness → patterns → report
 - **engram-embed** — Local Rust embedding server with Metal GPU acceleration (~10ms per vector)
 - **Dashboard** — Next.js app for memory browsing, knowledge graph visualization, and system monitoring
+- **Anticipatory recall** — predictive context injection based on task patterns
+- **Awareness cycle** — waking behavioral analysis and proactive insight generation
+- **Scoped context** — task-adaptive memory budget allocation for sub-agents
+- **Multi-query retrieval** — RRF fusion across semantic query variants
+- **Cloud sync** — bidirectional sync, reconciliation, and cloud backup
+- **Webhooks** — HMAC-signed real-time event notifications
+- **Teams & delegation** — team-scoped memory and agent delegation contracts
+- **Identity & challenge** — portable user identity and verification
 
-See the [Architecture Documentation](./docs/ARCHITECTURE.md) for the full technical breakdown.
+**55 modules total** — see [Architecture Documentation](./docs/ARCHITECTURE.md) for the full breakdown.
 
 ## Integration
 
